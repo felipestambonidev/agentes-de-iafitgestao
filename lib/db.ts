@@ -69,7 +69,12 @@ export function ensureSchema() {
     await pool.query(`CREATE TABLE IF NOT EXISTS fit_ai_agents (slug TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, created_at TIMESTAMP NOT NULL DEFAULT now())`)
     await pool.query(`CREATE TABLE IF NOT EXISTS fit_ai_sessions (id TEXT PRIMARY KEY, user_id TEXT, user_email TEXT, agent_slug TEXT NOT NULL, title TEXT, created_at TIMESTAMP NOT NULL DEFAULT now(), updated_at TIMESTAMP NOT NULL DEFAULT now())`)
     await pool.query(`CREATE TABLE IF NOT EXISTS fit_ai_messages (id SERIAL PRIMARY KEY, session_id TEXT NOT NULL, user_id TEXT, role TEXT NOT NULL CHECK (role IN ('user','assistant')), content TEXT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT now())`)
-    await pool.query(`CREATE INDEX IF NOT EXISTS fit_ai_messages_session_idx ON fit_ai_messages(session_id, id)`)
+    const { rows: existingIndexes } = await pool.query(
+      `SELECT 1 FROM pg_indexes WHERE indexname = 'fit_ai_messages_session_idx'`
+    )
+    if (existingIndexes.length === 0) {
+      await pool.query(`CREATE INDEX fit_ai_messages_session_idx ON fit_ai_messages(session_id, id)`)
+    }
     const agents = [
       ['Fluig', 'Fluig', 'Processos e documentos corporativos'],
       ['Protheus', 'Protheus', 'ERP e gestão financeira'],
