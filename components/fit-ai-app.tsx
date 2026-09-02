@@ -67,6 +67,8 @@ export default function FitAiApp() {
   const [sending, setSending] = useState(false)
   const [localMessages, setLocalMessages] = useState<ChatMessage[] | null>(null)
   const [mobileSidebar, setMobileSidebar] = useState(false)
+  const [loginError, setLoginError] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
 
   const sessionId = useMemo(
     () => (email ? `${email}-${activeService}` : `guest-${activeService}`),
@@ -99,9 +101,21 @@ export default function FitAiApp() {
           <h1 className="mb-3 text-3xl font-semibold tracking-tight">Entre na sua conta</h1>
           <p className="mb-9 text-sm leading-6 text-muted-foreground">Acesse seus agentes e continue sua jornada de produtividade.</p>
           <form
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault()
-              setLoggedIn(true)
+              setLoginError('')
+              setLoginLoading(true)
+              try {
+                const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
+                const data = await response.json()
+                if (!response.ok) throw new Error(data.error || 'Não foi possível entrar.')
+                setLoggedIn(true)
+                setPassword('')
+              } catch (error) {
+                setLoginError(error instanceof Error ? error.message : 'Não foi possível entrar.')
+              } finally {
+                setLoginLoading(false)
+              }
             }}
             className="space-y-5"
           >
@@ -127,7 +141,8 @@ export default function FitAiApp() {
                 className="mt-2 h-12 w-full rounded-xl border bg-card px-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </label>
-            <button className="h-12 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition hover:opacity-90">
+            {loginError ? <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{loginError}</p> : null}
+            <button disabled={loginLoading} className="h-12 w-full rounded-xl bg-primary font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60">
               Entrar
             </button>
           </form>

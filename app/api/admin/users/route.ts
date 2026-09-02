@@ -1,0 +1,10 @@
+import { NextResponse } from 'next/server'
+import { randomUUID } from 'node:crypto'
+import { ensureSchema, pool } from '@/lib/db'
+import { getCurrentUser, hashPassword } from '@/lib/auth'
+
+async function admin() { const user = await getCurrentUser(); return user?.role === 'admin' ? user : null }
+export async function GET() { const user = await admin(); if (!user) return NextResponse.json({ error: 'Não autorizado.' }, { status: 403 }); await ensureSchema(); const { rows } = await pool.query('SELECT id,email,name,role,active,created_at FROM fit_users ORDER BY created_at DESC'); return NextResponse.json({ users: rows }) }
+export async function POST(request: Request) { const user = await admin(); if (!user) return NextResponse.json({ error: 'Não autorizado.' }, { status: 403 }); const body = await request.json(); if (!body.email || !body.password || !body.name) return NextResponse.json({ error: 'Nome, e-mail e senha são obrigatórios.' }, { status: 400 }); await pool.query('INSERT INTO fit_users (id,email,name,password_hash,role) VALUES ($1,$2,$3,$4,$5)', [randomUUID(), String(body.email).trim().toLowerCase(), String(body.name).trim(), await hashPassword(String(body.password)), ['admin','manager','user'].includes(body.role) ? body.role : 'user']); return NextResponse.json({ ok: true }, { status: 201 }) }
+export async function PATCH(request: Request) { const user = await admin(); if (!user) return NextResponse.json({ error: 'Não autorizado.' }, { status: 403 }); const body = await request.json(); await pool.query('UPDATE fit_users SET name=COALESCE($2,name), role=COALESCE($3,role), active=COALESCE($4,active), updated_at=now() WHERE id=$1', [body.id, body.name, body.role, body.active]); return NextResponse.json({ ok: true }) }
+export async function DELETE(request: Request) { const user = await admin(); if (!user) return NextResponse.json({ error: 'Não autorizado.' }, { status: 403 }); const { id } = await request.json(); if (id === user.id) return NextResponse.json({ error: 'Você não pode excluir sua própria conta.' }, { status: 400 }); await pool.query('DELETE FROM fit_users WHERE id=$1', [id]); return NextResponse.json({ ok: true }) }
