@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { chatCollection } from '@/lib/mongodb'
 
-const FIT_WEBHOOK_URL = process.env.FIT_WEBHOOK_URL ?? 'https://io.fitgestao.com/webhook-test/64aff123-e3d3-4444-8ca5-cb8fd64251d8'
+const FIT_WEBHOOK_URL = process.env.FIT_WEBHOOK_URL ?? 'https://io.fitgestao.com/webhook-test/plataforma-agentes-de-ia-fit'
 const FIT_WEBHOOK_SECRET = process.env.FIT_WEBHOOK_SECRET
 
 function webhookHeaders() {
@@ -24,7 +24,7 @@ function webhookMessage(data: unknown) {
 
 async function callFitWebhook(payload: Record<string, string>) {
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 25000)
+  const timeout = setTimeout(() => controller.abort(), 120000)
   try {
     const response = await fetch(FIT_WEBHOOK_URL, {
       method: 'POST',
@@ -100,3 +100,4 @@ export async function POST(request: Request) {
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300
