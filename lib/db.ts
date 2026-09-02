@@ -88,6 +88,9 @@ export function ensureSchema() {
     for (const [slug, name, description] of agents) {
       await pool.query('INSERT INTO fit_ai_agents (slug, name, description) SELECT $1, $2, $3 WHERE NOT EXISTS (SELECT 1 FROM fit_ai_agents WHERE slug = $1)', [slug, name, description])
     }
-  })()
+  })().catch((error) => {
+    schemaReady = null
+    throw error
+  })
   return schemaReady
 }
