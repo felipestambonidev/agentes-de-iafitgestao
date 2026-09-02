@@ -1,6 +1,6 @@
 import { Pool } from 'pg'
 
-declare global { var __fitPgPool: Pool | undefined }
+declare global { var __fitPgPool: Pool | undefined; var __fitPgPoolSignature: string | undefined }
 
 function requiredEnv(name: string) {
   const value = process.env[name]?.trim()
@@ -30,8 +30,37 @@ function createPool() {
   }
   return new Pool(config)
 }
-export const pool = globalThis.__fitPgPool ?? createPool()
-if (process.env.NODE_ENV !== 'production') globalThis.__fitPgPool = pool
+function getPool() {
+  const signature = [
+    process.env.FIT_PG_HOST,
+    process.env.FIT_PG_PORT,
+    process.env.FIT_PG_DATABASE,
+    process.env.FIT_PG_USER,
+    process.env.FIT_PG_PASSWORD,
+    process.env.FIT_PG_SSL,
+  ].join('|')
+
+  if (process.env.NODE_ENV !== 'production') {
+    if (!globalThis.__fitPgPool || globalThis.__fitPgPoolSignature !== signature) {
+      globalThis.__fitPgPool?.end().catch(() => {})
+      globalThis.__fitPgPool = createPool()
+      globalThis.__fitPgPoolSignature = signature
+    }
+    return globalThis.__fitPgPool
+  }
+
+  return createPool()
+}
+
+// Proxy so every call re-checks env vars, avoiding a stale connection
+// cached from before .env was fully configured during local development.
+export const pool = new Proxy({} as Pool, {
+  get(_target, prop, receiver) {
+    const current = getPool()
+    const value = Reflect.get(current, prop, receiver)
+    return typeof value === 'function' ? value.bind(current) : value
+  },
+})
 let schemaReady: Promise<void> | null = null
 export function ensureSchema() {
   if (!schemaReady) schemaReady = (async () => {
