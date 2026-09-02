@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { ensureSchema, pool } from '@/lib/db'
+import { chatCollection } from '@/lib/mongodb'
 
 const FIT_WEBHOOK_URL = process.env.FIT_WEBHOOK_URL ?? 'https://io.fitgestao.com/webhook-test/64aff123-e3d3-4444-8ca5-cb8fd64251d8'
 const FIT_WEBHOOK_SECRET = process.env.FIT_WEBHOOK_SECRET
@@ -15,10 +15,8 @@ function webhookHeaders() {
 function webhookMessage(data: unknown) {
   if (typeof data === 'string' && data.trim()) return data
   if (data && typeof data === 'object') {
-    const payload = data as { message?: unknown; output?: unknown; response?: unknown; text?: unknown }
-    for (const value of [payload.message, payload.output, payload.response, payload.text]) {
-      if (typeof value === 'string' && value.trim()) return value
-    }
+    const payload = data as { resposta_ia?: unknown }
+    if (typeof payload.resposta_ia === 'string' && payload.resposta_ia.trim()) return payload.resposta_ia
     return JSON.stringify(data)
   }
   return 'Mensagem processada com sucesso.'
@@ -47,14 +45,13 @@ async function callFitWebhook(payload: Record<string, string>) {
 
 export async function GET(request: Request) {
   try {
-    await ensureSchema()
-    const sessionId = new URL(request.url).searchParams.get('session_id')
+    const params = new URL(request.url).searchParams
+    const sessionId = params.get('session_id')
+    const collectionName = params.get('collection_name') || 'chat_messages'
     if (!sessionId) return NextResponse.json({ error: 'session_id é obrigatório.' }, { status: 400 })
-    const { rows } = await pool.query(
-      'SELECT role, content, created_at FROM fit_ai_messages WHERE session_id = $1 ORDER BY id ASC',
-      [sessionId],
-    )
-    return NextResponse.json({ messages: rows })
+    const collection = await chatCollection()
+    const messages = await collection.find({ session_id: sessionId, collection_name: collectionName }, { projection: { _id: 0, role: 1, content: 1, created_at: 1 } }).sort({ created_at: 1 }).toArray()
+    return NextResponse.json({ messages })
   } catch (error) {
     console.error('[FIT AI] Erro ao carregar histórico:', error)
     return NextResponse.json({ error: 'Não foi possível carregar o histórico.' }, { status: 500 })
@@ -70,23 +67,10 @@ export async function POST(request: Request) {
     }
 
     const trimmedMessage = user_message.trim()
-    let databaseAvailable = true
-    try {
-      await ensureSchema()
-      await pool.query(
-      `INSERT INTO fit_ai_sessions (id, user_id, user_email, agent_slug, title)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (id) DO UPDATE SET user_id = EXCLUDED.user_id, user_email = EXCLUDED.user_email, agent_slug = EXCLUDED.agent_slug, updated_at = now()`,
-      [session_id, typeof body.user_id === 'string' ? body.user_id : null, typeof user_email === 'string' ? user_email : null, agent_type, trimmedMessage.slice(0, 80)],
-      )
-      await pool.query(
-        'INSERT INTO fit_ai_messages (session_id, user_id, role, content) VALUES ($1, $2, $3, $4)',
-        [session_id, typeof body.user_id === 'string' ? body.user_id : null, 'user', trimmedMessage],
-      )
-    } catch (error) {
-      databaseAvailable = false
-      console.error('[FIT AI] Banco indisponível; enviando ao webhook mesmo assim:', error)
-    }
+    const collectionName = typeof body.collection_name === 'string' && body.collection_name.trim() ? body.collection_name.trim() : 'chat_messages'
+    const collection = await chatCollection()
+    const messageBase = { session_id, user_id: typeof body.user_id === 'string' ? body.user_id : '', user_email: typeof user_email === 'string' ? user_email : '', collection_name: collectionName, agent_type }
+    await collection.insertOne({ ...messageBase, role: 'user', content: trimmedMessage, created_at: new Date() })
 
     const webhookPayload = {
       session_id,
@@ -106,13 +90,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'O n8n não respondeu. Confirme o Listen for test event e a URL do webhook.' }, { status: 502 })
     }
 
-    if (databaseAvailable) {
-      await pool.query(
-        'INSERT INTO fit_ai_messages (session_id, user_id, role, content) VALUES ($1, $2, $3, $4)',
-        [session_id, typeof body.user_id === 'string' ? body.user_id : null, 'assistant', message],
-      )
-    }
-    return NextResponse.json({ message, saved: databaseAvailable, webhook_url: FIT_WEBHOOK_URL })
+    await collection.insertOne({ ...messageBase, role: 'assistant', content: message, created_at: new Date() })
+    return NextResponse.json({ message, saved: true, webhook_url: FIT_WEBHOOK_URL })
   } catch (error) {
     console.error('[FIT AI] Erro ao processar mensagem:', error)
     return NextResponse.json({ error: 'Não foi possível salvar a mensagem. Confira as variáveis do PostgreSQL.' }, { status: 502 })

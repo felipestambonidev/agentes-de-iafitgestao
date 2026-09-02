@@ -94,7 +94,7 @@ export default function FitAiApp() {
   )
 
   const { data: history, isLoading } = useSWR<{ messages?: ChatMessage[]; error?: string }>(
-    loggedIn ? `/api/chat?session_id=${encodeURIComponent(sessionId)}` : null,
+    loggedIn ? `/api/chat?session_id=${encodeURIComponent(sessionId)}&collection_name=chat_messages` : null,
     fetcher,
   )
 
@@ -190,6 +190,7 @@ export default function FitAiApp() {
           user_message: text,
           user_email: email,
           user_id: currentUser?.id ?? '',
+          collection_name: 'chat_messages',
         }),
       })
       const data = await response.json()
