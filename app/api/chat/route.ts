@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server'
 import { ensureSchema, pool } from '@/lib/db'
 
-const FIT_WEBHOOK_URL = process.env.FIT_WEBHOOK_URL ?? 'https://io.fitgestao.com/webhook-test/plataforma-agentes-de-ia-fit'
+const FIT_WEBHOOK_URL = process.env.FIT_WEBHOOK_URL ?? 'https://io.fitgestao.com/webhook/plataforma-agentes-de-ia-fit'
+const FIT_WEBHOOK_SECRET = process.env.FIT_WEBHOOK_SECRET
+
+function webhookHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    Accept: 'application/json, text/plain, */*',
+    ...(FIT_WEBHOOK_SECRET ? { 'X-Webhook-Secret': FIT_WEBHOOK_SECRET } : {}),
+  }
+}
 
 function webhookMessage(data: unknown) {
   if (typeof data === 'string' && data.trim()) return data
@@ -21,10 +30,7 @@ async function callFitWebhook(payload: Record<string, string>) {
   try {
     const response = await fetch(FIT_WEBHOOK_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json, text/plain, */*',
-      },
+      headers: webhookHeaders(),
       body: JSON.stringify(payload),
       cache: 'no-store',
       signal: controller.signal,
