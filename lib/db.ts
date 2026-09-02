@@ -12,7 +12,19 @@ export function ensureSchema() {
     await pool.query(`CREATE TABLE IF NOT EXISTS fit_ai_sessions (id TEXT PRIMARY KEY, user_id TEXT, user_email TEXT, agent_slug TEXT NOT NULL, title TEXT, created_at TIMESTAMP NOT NULL DEFAULT now(), updated_at TIMESTAMP NOT NULL DEFAULT now())`)
     await pool.query(`CREATE TABLE IF NOT EXISTS fit_ai_messages (id SERIAL PRIMARY KEY, session_id TEXT NOT NULL, user_id TEXT, role TEXT NOT NULL CHECK (role IN ('user','assistant')), content TEXT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT now())`)
     await pool.query(`CREATE INDEX IF NOT EXISTS fit_ai_messages_session_idx ON fit_ai_messages(session_id, id)`)
-    await pool.query(`INSERT INTO fit_ai_agents (slug,name,description) VALUES ('Fluig','Fluig','Processos e documentos corporativos'),('Protheus','Protheus','ERP e gestão financeira'),('Service Desk','Service Desk','Suporte técnico e chamados'),('Marketing','Marketing','Campanhas e materiais de marketing'),('Comercial','Comercial','Vendas e relacionamento'),('DHO','DHO','Desenvolvimento humano'),('COT','COT','Controle operacional'),('Diretoria','Diretoria','Indicadores estratégicos') ON CONFLICT (slug) DO NOTHING`)
+    const agents = [
+      ['Fluig', 'Fluig', 'Processos e documentos corporativos'],
+      ['Protheus', 'Protheus', 'ERP e gestão financeira'],
+      ['Service Desk', 'Service Desk', 'Suporte técnico e chamados'],
+      ['Marketing', 'Marketing', 'Campanhas e materiais de marketing'],
+      ['Comercial', 'Comercial', 'Vendas e relacionamento'],
+      ['DHO', 'DHO', 'Desenvolvimento humano'],
+      ['COT', 'COT', 'Controle operacional'],
+      ['Diretoria', 'Diretoria', 'Indicadores estratégicos'],
+    ]
+    for (const [slug, name, description] of agents) {
+      await pool.query('INSERT INTO fit_ai_agents (slug, name, description) SELECT $1, $2, $3 WHERE NOT EXISTS (SELECT 1 FROM fit_ai_agents WHERE slug = $1)', [slug, name, description])
+    }
   })()
   return schemaReady
 }
