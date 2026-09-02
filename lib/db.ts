@@ -1,12 +1,41 @@
 import { Pool } from 'pg'
 
 declare global { var __fitPgPool: Pool | undefined }
-function createPool() { return new Pool({ host: process.env.FIT_PG_HOST, port: Number(process.env.FIT_PG_PORT ?? 5432), database: process.env.FIT_PG_DATABASE, user: process.env.FIT_PG_USER, password: process.env.FIT_PG_PASSWORD, ssl: process.env.FIT_PG_SSL === 'true' ? { rejectUnauthorized: false } : undefined, max: 5 }) }
+
+function requiredEnv(name: string) {
+  const value = process.env[name]?.trim()
+  if (!value) throw new Error(`Variável ${name} não está configurada. Use as variáveis FIT_PG_* no arquivo .env.local.`)
+  return value
+}
+
+function validateEnv() {
+  const host = requiredEnv('FIT_PG_HOST')
+  const database = requiredEnv('FIT_PG_DATABASE')
+  const user = requiredEnv('FIT_PG_USER')
+  const password = requiredEnv('FIT_PG_PASSWORD')
+  const port = Number(process.env.FIT_PG_PORT?.trim() || '5432')
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('FIT_PG_PORT inválida.')
+  return { host, database, user, password, port }
+}
+
+function createPool() {
+  const config = {
+    host: process.env.FIT_PG_HOST?.trim(),
+    port: Number(process.env.FIT_PG_PORT?.trim() || '5432'),
+    database: process.env.FIT_PG_DATABASE?.trim(),
+    user: process.env.FIT_PG_USER?.trim(),
+    password: process.env.FIT_PG_PASSWORD?.trim(),
+    ssl: process.env.FIT_PG_SSL?.trim() === 'true' ? { rejectUnauthorized: false } : undefined,
+    max: 5,
+  }
+  return new Pool(config)
+}
 export const pool = globalThis.__fitPgPool ?? createPool()
 if (process.env.NODE_ENV !== 'production') globalThis.__fitPgPool = pool
 let schemaReady: Promise<void> | null = null
 export function ensureSchema() {
   if (!schemaReady) schemaReady = (async () => {
+    validateEnv()
     await pool.query(`CREATE TABLE IF NOT EXISTS fit_users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin','manager','user')), active BOOLEAN NOT NULL DEFAULT true, created_at TIMESTAMP NOT NULL DEFAULT now(), updated_at TIMESTAMP NOT NULL DEFAULT now())`)
     await pool.query(`CREATE TABLE IF NOT EXISTS fit_ai_agents (slug TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, created_at TIMESTAMP NOT NULL DEFAULT now())`)
     await pool.query(`CREATE TABLE IF NOT EXISTS fit_ai_sessions (id TEXT PRIMARY KEY, user_id TEXT, user_email TEXT, agent_slug TEXT NOT NULL, title TEXT, created_at TIMESTAMP NOT NULL DEFAULT now(), updated_at TIMESTAMP NOT NULL DEFAULT now())`)
