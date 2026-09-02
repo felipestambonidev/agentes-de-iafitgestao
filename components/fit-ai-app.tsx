@@ -73,6 +73,21 @@ export default function FitAiApp() {
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
 
+  useEffect(() => {
+    let active = true
+    fetch('/api/auth/me')
+      .then((response) => response.json())
+      .then((data) => {
+        if (active && data.user) {
+          setCurrentUser(data.user)
+          setEmail(data.user.email)
+          setLoggedIn(true)
+        }
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
+
   const sessionId = useMemo(
     () => (email ? `${email}-${activeService}` : `guest-${activeService}`),
     [email, activeService],
