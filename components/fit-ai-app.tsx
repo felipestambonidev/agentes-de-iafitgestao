@@ -59,7 +59,7 @@ function MarkdownMessage({ content }: { content: string }) {
 
 export default function FitAiApp() {
   const [loggedIn, setLoggedIn] = useState(false)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState('felipe.stamboni@fitgestao.com')
   const [password, setPassword] = useState('')
   const [activeService, setActiveService] = useState('Fluig')
   const [expanded, setExpanded] = useState(true)
