@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import useSWR from 'swr'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -20,6 +21,7 @@ import {
 const services = ['Fluig', 'Protheus', 'Service Desk', 'Marketing', 'Comercial', 'DHO', 'COT', 'Diretoria']
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string }
+type CurrentUser = { id: string; email: string; name?: string; role: string }
 
 function welcomeMessage(email: string): ChatMessage[] {
   const firstName = email.split('@')[0]?.split('.')[0] || 'time'
@@ -59,6 +61,7 @@ function MarkdownMessage({ content }: { content: string }) {
 
 export default function FitAiApp() {
   const [loggedIn, setLoggedIn] = useState(false)
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [email, setEmail] = useState('felipe.stamboni@fitgestao.com')
   const [password, setPassword] = useState('')
   const [activeService, setActiveService] = useState('Fluig')
@@ -109,6 +112,7 @@ export default function FitAiApp() {
                 const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
                 const data = await response.json()
                 if (!response.ok) throw new Error(data.error || 'Não foi possível entrar.')
+                setCurrentUser(data.user)
                 setLoggedIn(true)
                 setPassword('')
               } catch (error) {
@@ -261,13 +265,20 @@ export default function FitAiApp() {
           )}
         </div>
 
-        <div className="mt-auto flex items-center gap-3 border-t pt-5">
+        <div className="mt-auto space-y-3 border-t pt-5">
+          {currentUser?.role === 'admin' ? (
+            <Link href="/admin" className="flex items-center justify-center rounded-lg bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/20">
+              Gerenciar plataforma
+            </Link>
+          ) : null}
+          <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-full bg-secondary text-sm font-medium">
             {email.charAt(0).toUpperCase() || 'U'}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{email || 'Usuário'}</p>
-            <p className="truncate text-xs text-muted-foreground">Equipe FIT</p>
+            <p className="truncate text-xs text-muted-foreground">{currentUser?.role === 'admin' ? 'Administrador' : 'Equipe FIT'}</p>
+          </div>
           </div>
         </div>
       </aside>
