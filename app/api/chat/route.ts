@@ -63,7 +63,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await ensureSchema()
     const body = await request.json()
     const { session_id, agent_type, user_message, user_email } = body ?? {}
     if (typeof session_id !== 'string' || typeof agent_type !== 'string' || typeof user_message !== 'string' || !user_message.trim()) {
@@ -71,39 +70,49 @@ export async function POST(request: Request) {
     }
 
     const trimmedMessage = user_message.trim()
-    await pool.query(
-      `INSERT INTO fit_ai_sessions (id, user_email, agent_slug, title)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (id) DO UPDATE SET user_email = EXCLUDED.user_email, agent_slug = EXCLUDED.agent_slug, updated_at = now()`,
-      [session_id, typeof user_email === 'string' ? user_email : null, agent_type, trimmedMessage.slice(0, 80)],
-    )
-    await pool.query(
-      'INSERT INTO fit_ai_messages (session_id, role, content) VALUES ($1, $2, $3)',
-      [session_id, 'user', trimmedMessage],
-    )
+    let databaseAvailable = true
+    try {
+      await ensureSchema()
+      await pool.query(
+      `INSERT INTO fit_ai_sessions (id, user_id, user_email, agent_slug, title)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (id) DO UPDATE SET user_id = EXCLUDED.user_id, user_email = EXCLUDED.user_email, agent_slug = EXCLUDED.agent_slug, updated_at = now()`,
+      [session_id, typeof body.user_id === 'string' ? body.user_id : null, typeof user_email === 'string' ? user_email : null, agent_type, trimmedMessage.slice(0, 80)],
+      )
+      await pool.query(
+        'INSERT INTO fit_ai_messages (session_id, user_id, role, content) VALUES ($1, $2, $3, $4)',
+        [session_id, typeof body.user_id === 'string' ? body.user_id : null, 'user', trimmedMessage],
+      )
+    } catch (error) {
+      databaseAvailable = false
+      console.error('[FIT AI] Banco indisponível; enviando ao webhook mesmo assim:', error)
+    }
 
-  const webhookPayload = {
-    session_id,
-    agent_type,
-    user_message: trimmedMessage,
-    message: trimmedMessage,
-    chatInput: trimmedMessage,
-    text: trimmedMessage,
-    user_email: typeof user_email === 'string' ? user_email : '',
-  }
+    const webhookPayload = {
+      session_id,
+      agent_type,
+      user_message: trimmedMessage,
+      message: trimmedMessage,
+      chatInput: trimmedMessage,
+      text: trimmedMessage,
+      user_id: typeof body.user_id === 'string' ? body.user_id : '',
+      user_email: typeof user_email === 'string' ? user_email : '',
+    }
     let message: string
     try {
       message = await callFitWebhook(webhookPayload)
     } catch (error) {
       console.error('[FIT AI] Falha no webhook:', error)
-      message = 'Sua mensagem foi salva, mas o agente não respondeu. Verifique se o n8n está em “Listen for test event”.'
+      return NextResponse.json({ error: 'O n8n não respondeu. Confirme o Listen for test event e a URL do webhook.' }, { status: 502 })
     }
 
-    await pool.query(
-      'INSERT INTO fit_ai_messages (session_id, role, content) VALUES ($1, $2, $3)',
-      [session_id, 'assistant', message],
-    )
-    return NextResponse.json({ message, webhook_url: FIT_WEBHOOK_URL })
+    if (databaseAvailable) {
+      await pool.query(
+        'INSERT INTO fit_ai_messages (session_id, user_id, role, content) VALUES ($1, $2, $3, $4)',
+        [session_id, typeof body.user_id === 'string' ? body.user_id : null, 'assistant', message],
+      )
+    }
+    return NextResponse.json({ message, saved: databaseAvailable, webhook_url: FIT_WEBHOOK_URL })
   } catch (error) {
     console.error('[FIT AI] Erro ao processar mensagem:', error)
     return NextResponse.json({ error: 'Não foi possível salvar a mensagem. Confira as variáveis do PostgreSQL.' }, { status: 502 })

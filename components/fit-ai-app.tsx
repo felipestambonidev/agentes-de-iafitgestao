@@ -189,9 +189,11 @@ export default function FitAiApp() {
           agent_type: activeService,
           user_message: text,
           user_email: email,
+          user_id: currentUser?.id ?? '',
         }),
       })
       const data = await response.json()
+      if (!response.ok) throw new Error(data.error || `Erro ${response.status} ao enviar mensagem.`)
       setLocalMessages((current) => [
         ...(current ?? []),
         { role: 'assistant', content: data.message || 'Recebi sua mensagem. Como posso continuar ajudando?' },
