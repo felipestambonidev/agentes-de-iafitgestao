@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { ensureSchema, pool } from '@/lib/db'
 
-const FIT_WEBHOOK_URL = process.env.FIT_WEBHOOK_URL ?? 'https://io.fitgestao.com/webhook/plataforma-agentes-de-ia-fit'
+const FIT_WEBHOOK_URL = process.env.FIT_WEBHOOK_URL ?? 'https://io.fitgestao.com/webhook-test/64aff123-e3d3-4444-8ca5-cb8fd64251d8'
 const FIT_WEBHOOK_SECRET = process.env.FIT_WEBHOOK_SECRET
 
 function webhookHeaders() {
