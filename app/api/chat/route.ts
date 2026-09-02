@@ -82,12 +82,15 @@ export async function POST(request: Request) {
       [session_id, 'user', trimmedMessage],
     )
 
-    const webhookPayload = {
-      session_id,
-      agent_type,
-      user_message: trimmedMessage,
-      user_email: typeof user_email === 'string' ? user_email : '',
-    }
+  const webhookPayload = {
+    session_id,
+    agent_type,
+    user_message: trimmedMessage,
+    message: trimmedMessage,
+    chatInput: trimmedMessage,
+    text: trimmedMessage,
+    user_email: typeof user_email === 'string' ? user_email : '',
+  }
     let message: string
     try {
       message = await callFitWebhook(webhookPayload)
