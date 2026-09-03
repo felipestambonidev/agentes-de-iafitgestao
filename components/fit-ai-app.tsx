@@ -13,6 +13,7 @@ import {
   FolderKanban,
   Home,
   MessageSquare,
+  PanelLeft,
   Plus,
   Sparkles,
   X,
@@ -40,6 +41,19 @@ function MarkdownMessage({ content }: { content: string }) {
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
+        h1: ({ children }) => <h1 className="mb-5 mt-8 text-2xl font-semibold tracking-tight text-foreground first:mt-0">{children}</h1>,
+        h2: ({ children }) => <h2 className="mb-4 mt-8 text-xl font-semibold tracking-tight text-foreground">{children}</h2>,
+        h3: ({ children }) => <h3 className="mb-3 mt-6 text-lg font-semibold text-foreground">{children}</h3>,
+        p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+        ul: ({ children }) => <ul className="mb-5 ml-5 list-disc space-y-2">{children}</ul>,
+        ol: ({ children }) => <ol className="mb-5 ml-5 list-decimal space-y-2">{children}</ol>,
+        li: ({ children }) => <li className="pl-1">{children}</li>,
+        blockquote: ({ children }) => <blockquote className="my-5 border-l-2 border-primary/60 pl-4 italic text-muted-foreground">{children}</blockquote>,
+        a: ({ children, href }) => <a href={href} target="_blank" rel="noreferrer" className="font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">{children}</a>,
+        hr: () => <hr className="my-7 border-border" />,
+        table: ({ children }) => <div className="my-5 overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm">{children}</table></div>,
+        th: ({ children }) => <th className="border-b bg-secondary/60 px-4 py-3 font-semibold">{children}</th>,
+        td: ({ children }) => <td className="border-b px-4 py-3 align-top last:border-0">{children}</td>,
         code({ className, children, ...props }) {
           const match = /language-(\w+)/.exec(className || '')
           return match ? (
@@ -70,6 +84,7 @@ export default function FitAiApp() {
   const [sending, setSending] = useState(false)
   const [localMessages, setLocalMessages] = useState<ChatMessage[] | null>(null)
   const [mobileSidebar, setMobileSidebar] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
 
@@ -212,16 +227,20 @@ export default function FitAiApp() {
   return (
     <main className="flex h-dvh min-h-0 overflow-hidden bg-background text-foreground">
       <aside
-        className={`${mobileSidebar ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 flex w-[280px] min-h-0 flex-col overflow-y-auto border-r bg-sidebar p-5 transition-transform md:static md:translate-x-0`}
+        className={`${mobileSidebar ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 flex min-h-0 flex-col overflow-y-auto border-r bg-sidebar p-3 transition-all duration-200 md:static md:translate-x-0 ${sidebarCollapsed ? 'md:w-[72px]' : 'w-[280px]'}`}
+        aria-label="Navegação principal"
       >
         <div className="mb-9 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Sparkles size={17} />
             </div>
-            <span className="font-semibold tracking-tight">FIT AI</span>
+            <span className={sidebarCollapsed ? 'hidden' : 'font-semibold tracking-tight'}>FIT AI</span>
           </div>
-          <button className="md:hidden" onClick={() => setMobileSidebar(false)} aria-label="Fechar menu">
+          <button className="hidden rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground md:block" onClick={() => setSidebarCollapsed((value) => !value)} aria-label={sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'} title={sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}>
+            <PanelLeft size={18} />
+          </button>
+          <button className="rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground md:hidden" onClick={() => setMobileSidebar(false)} aria-label="Fechar menu">
             <X size={18} />
           </button>
         </div>
@@ -229,12 +248,13 @@ export default function FitAiApp() {
         <button
           onClick={() => setLocalMessages(welcomeMessage(email))}
           className="mb-7 flex h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-muted-foreground/30 text-sm font-medium transition hover:border-primary hover:text-primary"
+          title={sidebarCollapsed ? 'Nova conversa' : undefined}
         >
           <Plus size={17} /> Nova conversa
         </button>
 
         <nav className="space-y-1">
-          <p className="mb-3 px-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Workspace</p>
+          <p className={`mb-3 px-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground ${sidebarCollapsed ? 'md:hidden' : ''}`}>Workspace</p>
           {[
             ['Home', Home],
             ['Projetos', FolderKanban],
@@ -244,12 +264,13 @@ export default function FitAiApp() {
             return (
               <button
                 key={name as string}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
                   name === 'Chats' ? 'bg-secondary font-medium' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground'
                 }`}
+                title={sidebarCollapsed ? (name as string) : undefined}
               >
                 <IconComponent size={17} />
-                {name as string}
+                <span className={sidebarCollapsed ? 'sr-only md:hidden' : ''}>{name as string}</span>
               </button>
             )
           })}
@@ -260,8 +281,8 @@ export default function FitAiApp() {
             onClick={() => setExpanded(!expanded)}
             className="flex w-full items-center justify-between px-3 text-left font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
           >
-            <span>Área de Serviços</span>
-            <ChevronDown size={14} className={expanded ? '' : '-rotate-90'} />
+            <span className={sidebarCollapsed ? 'md:hidden' : ''}>Área de Serviços</span>
+            <ChevronDown size={14} className={`${expanded ? '' : '-rotate-90'} ${sidebarCollapsed ? 'md:hidden' : ''}`} />
           </button>
           {expanded && (
             <div className="mt-3 space-y-0.5">
@@ -276,7 +297,7 @@ export default function FitAiApp() {
                     service === activeService ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground'
                   }`}
                 >
-                  {service}
+                  <span className={sidebarCollapsed ? 'sr-only md:hidden' : ''}>{service}</span>
                 </button>
               ))}
             </div>
@@ -290,13 +311,13 @@ export default function FitAiApp() {
             </Link>
           ) : null}
           <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-full bg-secondary text-sm font-medium">
-            {email.charAt(0).toUpperCase() || 'U'}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{email || 'Usuário'}</p>
-            <p className="truncate text-xs text-muted-foreground">{currentUser?.role === 'admin' ? 'Administrador' : 'Equipe FIT'}</p>
-          </div>
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium">
+              {email.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div className={sidebarCollapsed ? 'hidden' : 'min-w-0 flex-1'}>
+              <p className="truncate text-sm font-medium">{email || 'Usuário'}</p>
+              <p className="truncate text-xs text-muted-foreground">{currentUser?.role === 'admin' ? 'Administrador' : 'Equipe FIT'}</p>
+            </div>
           </div>
         </div>
       </aside>
@@ -312,8 +333,11 @@ export default function FitAiApp() {
       <section className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex h-[72px] shrink-0 items-center justify-between border-b px-6 py-4">
           <div className="flex items-center gap-3">
-            <button className="md:hidden" onClick={() => setMobileSidebar(true)} aria-label="Abrir menu">
+            <button className="rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground md:hidden" onClick={() => setMobileSidebar(true)} aria-label="Abrir menu">
               <MessageSquare size={20} />
+            </button>
+            <button className="hidden rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground md:block" onClick={() => setSidebarCollapsed((value) => !value)} aria-label={sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'} title={sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}>
+              <PanelLeft size={19} />
             </button>
             <div>
               <h2 className="text-sm font-semibold">{activeService}</h2>
@@ -322,7 +346,7 @@ export default function FitAiApp() {
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-8 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-8 sm:px-8 lg:px-12">
           {isLoading && !localMessages ? (
             <p className="text-sm text-muted-foreground">Carregando histórico...</p>
           ) : (
@@ -334,7 +358,7 @@ export default function FitAiApp() {
                   </div>
                 )}
                 <div
-                  className={`${message.role === 'user' ? 'max-w-[min(42rem,82%)] rounded-2xl bg-primary px-4 py-3 text-primary-foreground shadow-sm' : 'min-w-0 max-w-3xl flex-1 px-1 py-1'} text-[15px] leading-7`}
+                  className={`${message.role === 'user' ? 'max-w-[min(42rem,82%)] rounded-3xl bg-primary px-5 py-3 text-primary-foreground shadow-sm' : 'min-w-0 max-w-3xl flex-1 px-1 py-1'} text-[15px] leading-7`}
                 >
                   <MarkdownMessage content={message.content} />
                 </div>
