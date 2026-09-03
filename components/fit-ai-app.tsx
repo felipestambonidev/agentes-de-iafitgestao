@@ -247,10 +247,12 @@ export default function FitAiApp() {
 
         <button
           onClick={() => setLocalMessages(welcomeMessage(email))}
-          className="mb-7 flex h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-muted-foreground/30 text-sm font-medium transition hover:border-primary hover:text-primary"
-          title={sidebarCollapsed ? 'Nova conversa' : undefined}
+          className={`group relative mb-7 flex h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-muted-foreground/30 text-sm font-medium transition hover:border-primary hover:text-primary ${sidebarCollapsed ? 'md:mx-auto md:size-11 md:border-0 md:bg-secondary' : ''}`}
+          aria-label="Nova conversa"
         >
-          <Plus size={17} /> Nova conversa
+          <Plus size={17} />
+          <span className={sidebarCollapsed ? 'md:hidden' : ''}>Nova conversa</span>
+          {sidebarCollapsed ? <span className="sidebar-tooltip">Nova conversa</span> : null}
         </button>
 
         <nav className="space-y-1">
@@ -264,19 +266,20 @@ export default function FitAiApp() {
             return (
               <button
                 key={name as string}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${sidebarCollapsed ? 'md:mx-auto md:size-11 md:justify-center md:px-0' : ''} ${
                   name === 'Chats' ? 'bg-secondary font-medium' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground'
                 }`}
                 title={sidebarCollapsed ? (name as string) : undefined}
               >
                 <IconComponent size={17} />
                 <span className={sidebarCollapsed ? 'sr-only md:hidden' : ''}>{name as string}</span>
+                {sidebarCollapsed ? <span className="sidebar-tooltip">{name as string}</span> : null}
               </button>
             )
           })}
         </nav>
 
-        <div className="mt-8">
+        <div className={`mt-8 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
           <button
             onClick={() => setExpanded(!expanded)}
             className="flex w-full items-center justify-between px-3 text-left font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
@@ -293,11 +296,13 @@ export default function FitAiApp() {
                     setActiveService(service)
                     setMobileSidebar(false)
                   }}
-                  className={`flex w-full items-center rounded-lg px-3 py-2 text-sm ${
+                  className={`group relative flex w-full items-center rounded-lg px-3 py-2 text-sm ${
                     service === activeService ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground'
-                  }`}
+                  } ${sidebarCollapsed ? 'md:mx-auto md:size-11 md:justify-center' : ''}`}
+                  aria-label={service}
                 >
                   <span className={sidebarCollapsed ? 'sr-only md:hidden' : ''}>{service}</span>
+                  {sidebarCollapsed ? <span className="sidebar-tooltip">{service}</span> : null}
                 </button>
               ))}
             </div>
@@ -306,8 +311,10 @@ export default function FitAiApp() {
 
         <div className="mt-auto space-y-3 border-t pt-5">
           {currentUser?.role === 'admin' ? (
-            <Link href="/admin" className="flex items-center justify-center rounded-lg bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/20">
-              Gerenciar plataforma
+            <Link href="/admin" aria-label="Gerenciar plataforma" className={`group relative flex items-center justify-center rounded-lg bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/20 ${sidebarCollapsed ? 'md:mx-auto md:size-11 md:bg-primary/10 md:px-0' : ''}`}>
+              <span className={sidebarCollapsed ? 'hidden' : ''}>Gerenciar plataforma</span>
+              {sidebarCollapsed ? <span className="text-sm">G</span> : null}
+              {sidebarCollapsed ? <span className="sidebar-tooltip">Gerenciar plataforma</span> : null}
             </Link>
           ) : null}
           <div className="flex items-center gap-3">
