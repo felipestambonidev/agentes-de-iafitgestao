@@ -9,17 +9,34 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import {
   ArrowUp,
+  BriefcaseBusiness,
+  Building2,
   ChevronDown,
+  ClipboardList,
   FolderKanban,
+  Handshake,
+  Headphones,
   Home,
+  Megaphone,
   MessageSquare,
   PanelLeft,
   Plus,
+  Settings2,
   Sparkles,
+  Users,
   X,
 } from 'lucide-react'
 
-const services = ['Fluig', 'Protheus', 'Service Desk', 'Marketing', 'Comercial', 'DHO', 'COT', 'Diretoria']
+const services = [
+  ['Fluig', BriefcaseBusiness],
+  ['Protheus', Building2],
+  ['Service Desk', Headphones],
+  ['Marketing', Megaphone],
+  ['Comercial', Handshake],
+  ['DHO', Users],
+  ['COT', ClipboardList],
+  ['Diretoria', Settings2],
+] as const
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string }
 type CurrentUser = { id: string; email: string; name?: string; role: string }
@@ -227,10 +244,10 @@ export default function FitAiApp() {
   return (
     <main className="flex h-dvh min-h-0 overflow-hidden bg-background text-foreground">
       <aside
-        className={`${mobileSidebar ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 flex min-h-0 flex-col overflow-y-auto border-r bg-sidebar p-3 transition-all duration-200 md:static md:translate-x-0 ${sidebarCollapsed ? 'md:w-[72px]' : 'w-[280px]'}`}
+        className={`${mobileSidebar ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 flex min-h-0 flex-col overflow-y-auto bg-sidebar p-3 transition-all duration-200 md:static md:translate-x-0 ${sidebarCollapsed ? 'md:w-[76px]' : 'w-[280px]'}`}
         aria-label="Navegação principal"
       >
-        <div className="mb-9 flex items-center justify-between">
+        <div className={`mb-9 flex shrink-0 items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Sparkles size={17} />
@@ -289,7 +306,7 @@ export default function FitAiApp() {
           </button>
           {expanded && (
             <div className="mt-3 space-y-0.5">
-              {services.map((service) => (
+              {services.map(([service, ServiceIcon]) => (
                 <button
                   key={service}
                   onClick={() => {
@@ -301,6 +318,7 @@ export default function FitAiApp() {
                   } ${sidebarCollapsed ? 'md:mx-auto md:size-11 md:justify-center' : ''}`}
                   aria-label={service}
                 >
+                  <ServiceIcon size={16} className="shrink-0" />
                   <span className={sidebarCollapsed ? 'sr-only md:hidden' : ''}>{service}</span>
                   {sidebarCollapsed ? <span className="sidebar-tooltip">{service}</span> : null}
                 </button>
@@ -309,11 +327,11 @@ export default function FitAiApp() {
           )}
         </div>
 
-        <div className="mt-auto space-y-3 border-t pt-5">
+        <div className="mt-auto space-y-3 pt-5">
           {currentUser?.role === 'admin' ? (
             <Link href="/admin" aria-label="Gerenciar plataforma" className={`group relative flex items-center justify-center rounded-lg bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/20 ${sidebarCollapsed ? 'md:mx-auto md:size-11 md:bg-primary/10 md:px-0' : ''}`}>
               <span className={sidebarCollapsed ? 'hidden' : ''}>Gerenciar plataforma</span>
-              {sidebarCollapsed ? <span className="text-sm">G</span> : null}
+              {sidebarCollapsed ? <Users size={17} /> : null}
               {sidebarCollapsed ? <span className="sidebar-tooltip">Gerenciar plataforma</span> : null}
             </Link>
           ) : null}
@@ -338,7 +356,7 @@ export default function FitAiApp() {
       )}
 
       <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="flex h-[72px] shrink-0 items-center justify-between border-b px-6 py-4">
+        <header className="flex h-[72px] shrink-0 items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <button className="rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground md:hidden" onClick={() => setMobileSidebar(true)} aria-label="Abrir menu">
               <MessageSquare size={20} />
