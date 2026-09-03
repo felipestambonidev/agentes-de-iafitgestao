@@ -210,9 +210,9 @@ export default function FitAiApp() {
   }
 
   return (
-    <main className="flex min-h-screen bg-background text-foreground">
+    <main className="flex h-dvh min-h-0 overflow-hidden bg-background text-foreground">
       <aside
-        className={`${mobileSidebar ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 flex w-[280px] flex-col border-r bg-sidebar p-5 transition-transform md:static md:translate-x-0`}
+        className={`${mobileSidebar ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 flex w-[280px] min-h-0 flex-col overflow-y-auto border-r bg-sidebar p-5 transition-transform md:static md:translate-x-0`}
       >
         <div className="mb-9 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -309,8 +309,8 @@ export default function FitAiApp() {
         />
       )}
 
-      <section className="flex min-h-screen flex-1 flex-col">
-        <header className="flex items-center justify-between border-b px-6 py-4">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="flex h-[72px] shrink-0 items-center justify-between border-b px-6 py-4">
           <div className="flex items-center gap-3">
             <button className="md:hidden" onClick={() => setMobileSidebar(true)} aria-label="Abrir menu">
               <MessageSquare size={20} />
@@ -322,21 +322,19 @@ export default function FitAiApp() {
           </div>
         </header>
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-6 py-8">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-8 sm:px-6">
           {isLoading && !localMessages ? (
             <p className="text-sm text-muted-foreground">Carregando histórico...</p>
           ) : (
             messages.map((message, index) => (
-              <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
+              <div key={index} className={`mx-auto flex w-full max-w-3xl items-start gap-3 py-2 ${message.role === 'user' ? 'justify-end' : ''}`}>
                 {message.role === 'assistant' && (
                   <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                     <Sparkles size={15} />
                   </div>
                 )}
                 <div
-                  className={`max-w-[640px] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card'
-                  }`}
+                  className={`${message.role === 'user' ? 'max-w-[min(42rem,82%)] rounded-2xl bg-primary px-4 py-3 text-primary-foreground shadow-sm' : 'min-w-0 max-w-3xl flex-1 px-1 py-1'} text-[15px] leading-7`}
                 >
                   <MarkdownMessage content={message.content} />
                 </div>
@@ -358,9 +356,9 @@ export default function FitAiApp() {
             event.preventDefault()
             submit()
           }}
-          className="border-t p-4"
+          className="shrink-0 border-t bg-background/95 p-4 backdrop-blur"
         >
-          <div className="flex items-center gap-3 rounded-2xl border bg-card px-4 py-2">
+          <div className="mx-auto flex max-w-3xl items-center gap-3 rounded-2xl border bg-card px-4 py-2 shadow-sm">
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
