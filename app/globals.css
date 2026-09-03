@@ -31,7 +31,7 @@
 .sidebar-tooltip {
   pointer-events: none;
   position: absolute;
-  left: calc(100% + 10px);
+  left: calc(100% + 8px);
   top: 50%;
   z-index: 50;
   width: max-content;
