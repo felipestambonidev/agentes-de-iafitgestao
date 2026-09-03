@@ -254,9 +254,6 @@ export default function FitAiApp() {
             </div>
             <span className={sidebarCollapsed ? 'hidden' : 'font-semibold tracking-tight'}>FIT AI</span>
           </div>
-          <button className="hidden rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground md:block" onClick={() => setSidebarCollapsed((value) => !value)} aria-label={sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'} title={sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}>
-            <PanelLeft size={18} />
-          </button>
           <button className="rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground md:hidden" onClick={() => setMobileSidebar(false)} aria-label="Fechar menu">
             <X size={18} />
           </button>
@@ -264,7 +261,7 @@ export default function FitAiApp() {
 
         <button
           onClick={() => setLocalMessages(welcomeMessage(email))}
-          className={`group relative mb-7 flex h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-muted-foreground/30 text-sm font-medium transition hover:border-primary hover:text-primary ${sidebarCollapsed ? 'md:mx-auto md:size-11 md:border-0 md:bg-secondary' : ''}`}
+          className={`group relative mb-7 flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground ${sidebarCollapsed ? 'md:mx-auto md:size-11 md:border-0 md:bg-secondary' : ''}`}
           aria-label="Nova conversa"
         >
           <Plus size={17} />
@@ -296,13 +293,13 @@ export default function FitAiApp() {
           })}
         </nav>
 
-        <div className={`mt-8 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
+        <div className="mt-8">
           <button
             onClick={() => setExpanded(!expanded)}
             className="flex w-full items-center justify-between px-3 text-left font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
           >
-            <span className={sidebarCollapsed ? 'md:hidden' : ''}>Área de Serviços</span>
-            <ChevronDown size={14} className={`${expanded ? '' : '-rotate-90'} ${sidebarCollapsed ? 'md:hidden' : ''}`} />
+            <span className={sidebarCollapsed ? 'sr-only md:hidden' : ''}>Área de Serviços</span>
+            <ChevronDown size={14} className={`${expanded ? '' : '-rotate-90'} ${sidebarCollapsed ? 'sr-only md:hidden' : ''}`} />
           </button>
           {expanded && (
             <div className="mt-3 space-y-0.5">
@@ -315,10 +312,10 @@ export default function FitAiApp() {
                   }}
                   className={`group relative flex w-full items-center rounded-lg px-3 py-2 text-sm ${
                     service === activeService ? 'bg-secondary font-medium text-foreground' : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground'
-                  } ${sidebarCollapsed ? 'md:mx-auto md:size-11 md:justify-center' : ''}`}
+                  } ${sidebarCollapsed ? 'md:mx-auto md:size-11 md:justify-center md:px-0' : ''}`}
                   aria-label={service}
                 >
-                  <ServiceIcon size={16} className="shrink-0" />
+                  <ServiceIcon size={16} className={`shrink-0 ${sidebarCollapsed ? '' : 'md:hidden'}`} />
                   <span className={sidebarCollapsed ? 'sr-only md:hidden' : ''}>{service}</span>
                   {sidebarCollapsed ? <span className="sidebar-tooltip">{service}</span> : null}
                 </button>
