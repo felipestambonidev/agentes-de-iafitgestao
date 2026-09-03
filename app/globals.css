@@ -27,6 +27,39 @@
   border: 1px solid transparent;
   background-clip: padding-box;
 }
+
+.sidebar-tooltip {
+  pointer-events: none;
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  z-index: 50;
+  width: max-content;
+  max-width: 220px;
+  transform: translateY(-50%) translateX(-4px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--popover);
+  padding: 7px 10px;
+  color: var(--popover-foreground);
+  font-size: 12px;
+  line-height: 1.25;
+  opacity: 0;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--foreground) 18%, transparent);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.group:hover > .sidebar-tooltip,
+.group:focus-visible > .sidebar-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+@media (max-width: 767px) {
+  .sidebar-tooltip {
+    display: none;
+  }
+}
 @import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
